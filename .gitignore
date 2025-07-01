@@ -1,0 +1,76 @@
+# -----------------------
+# 📦 Dependencies
+# -----------------------
+**/node_modules/
+.pnp/
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# -----------------------
+# 🧪 Test Coverage
+# -----------------------
+**/coverage/
+*.lcov
+
+# -----------------------
+# 🚀 Build Output
+# -----------------------
+# Next.js (frontend)
+**/.next/
+**/out/
+
+# Express.js (backend)
+**/build/
+**/dist/
+
+# -----------------------
+# ⚙️ Environment Files
+# -----------------------
+**/.env*
+!**/.env.example
+
+# -----------------------
+# 🧹 Miscellaneous
+# -----------------------
+.DS_Store
+Thumbs.db
+*.pem
+*.sqlite
+*.sqlite3
+
+# -----------------------
+# 🧑‍💻 Debug Logs
+# -----------------------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# -----------------------
+# ☁️ Deployment
+# -----------------------
+.vercel/
+.netlify/
+
+# -----------------------
+# 📄 TypeScript
+# -----------------------
+*.tsbuildinfo
+next-env.d.ts
+
+# -----------------------
+# 💻 IDE & Editor
+# -----------------------
+.vscode/
+.idea/
+*.swp
+
+# -----------------------
+# 🔧 OS-specific
+# -----------------------
+*.bak
+*.tmp
