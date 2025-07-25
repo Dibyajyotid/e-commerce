@@ -3,7 +3,7 @@ import User from "../models/user.model.js";
 
 export const protectRoute = async (req, res, next) => {
   try {
-    const token = req.cookies.jwt || req.headers.authorization?.split(" ")[1];
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
 
     if (!token) {
       return res
@@ -12,14 +12,14 @@ export const protectRoute = async (req, res, next) => {
     }
 
     const decoded = verifyToken(token);
-    if (!decoded || !decoded.userId) {
+    if (!decoded?.userId) {
       return res
         .status(401)
         .json({ success: false, message: "Not authorized, token failed" });
     }
 
     //find user by ID from token and attach to request
-    const user = await User.findById(decoded.id).select("-password");
+    const user = await User.findById(decoded.userId).select("-password");
     if (!user) {
       return res
         .status(404)

@@ -59,7 +59,7 @@ export const verifyToken = (token) => {
 
 //clears the JWT token by setting an expired cookie
 export const clearTokenCookie = (res) => {
-  res.clearCookie("jwt", {
+  res.clearCookie("token", {
     domain: process.env.COOKIE_DOMAIN || "localhost",
     path: "/",
     httpOnly: true,
