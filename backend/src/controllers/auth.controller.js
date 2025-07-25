@@ -167,3 +167,35 @@ export const vendorSignup = async (req, res) => {
     bankDetails,
   } = req.body;
 };
+
+export const checkAuth = (req, res) => {
+  try {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authorized" });
+    }
+
+    const user = {
+      id: req.user._id,
+      fullName: req.user.fullName,
+      email: req.user.email,
+      phone: req.user.phone,
+      role: req.user.role,
+      avatar: req.user.avatar,
+      isActive: req.user.isActive,
+      emailVerified: req.user.emailVerified,
+      lastLogin: req.user.lastLogin,
+      addresses: req.user.addresses,
+      wishlist: req.user.wishlist,
+      cart: req.user.cart,
+      orderHistory: req.user.orderHistory,
+      lastAccess: req.user.lastAccess,
+    };
+
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    console.log("Error in checkAuth controller", error.message);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
