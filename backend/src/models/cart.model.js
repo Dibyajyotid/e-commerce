@@ -27,13 +27,10 @@ const cartSchema = new mongoose.Schema(
       unique: true, // One cart per user
     },
     items: [cartItemSchema],
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
+    totalAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   { timestamps: true }

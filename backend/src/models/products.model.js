@@ -84,11 +84,6 @@ const productSchema = new mongoose.Schema(
       },
     ],
 
-    // specifications: {
-    //   type: Map,
-    //   of: String,
-    // },
-
     discount: {
       type: Number,
       default: 0,
@@ -125,11 +120,6 @@ const productSchema = new mongoose.Schema(
       type: String,
       default: "No warranty",
     },
-
-    // returnPolicy: {
-    //     type: String,
-    //     default: "30 days return policy",
-    // },
   },
   { timestamps: true }
 );

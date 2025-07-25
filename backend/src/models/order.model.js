@@ -25,6 +25,14 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
     items: [orderItemSchema],
+    orderDate: {
+      type: Date,
+      default: Date.now,
+    },
+    isCancelled: {
+      type: Boolean,
+      default: false,
+    },
     shippingAddress: {
       street: String,
       city: String,

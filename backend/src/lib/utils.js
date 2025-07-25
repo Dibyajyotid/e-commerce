@@ -5,12 +5,14 @@ import { config } from "dotenv";
 // user: User object containing _id and role
 export const generateToken = (user, res) => {
   config();
-  if (!user?._id || !user?.role) {
+  if (!user?._id || !user?.role || !user) {
     throw new Error("Invalid user data for token generation");
   }
 
   const payload = {
-    id: user._id,
+    userId: user._id,
+    userEmail: user.email,
+    userFullName: user.fullName,
     role: user.role,
   };
 
@@ -40,9 +42,18 @@ export const verifyToken = (token) => {
   }
 
   try {
-    return jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Validate required fields in payload
+    if (!decoded.userId || !decoded.role) {
+      throw new Error("Invalid token payload");
+    }
+
+    return decoded;
   } catch (error) {
-    throw new Error("Invalid token");
+    throw new Error(
+      error.name === "TokenExpiredError" ? "Token expired" : "Invalid token"
+    );
   }
 };
 
@@ -54,5 +65,6 @@ export const clearTokenCookie = (res) => {
     httpOnly: true,
     sameSite: "None",
     secure: process.env.NODE_ENV === "production",
+    maxAge: 0, // Set maxAge to 0 to expire the cookie immediately
   });
 };

@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import User from "../models/user.model.js";
-import Customer from "../models/customer.model.js";
+import Customer from "../models/newUser.model.js";
 import { generateToken } from "../lib/utils.js";
 
 //customer auth
@@ -52,39 +52,103 @@ export const customerSignup = async (req, res) => {
       role: "customer",
     });
 
-    //create customer profile
-    const customer = new Customer({
-      _id: newUser._id, // ensure the customer profile has the same ID as the user
-      ...newUser.toObject(), // copy user fields to customer
-      addresses: [],
-      wishlist: [],
-      orderHistory: [],
-      cart: null,
-    });
+    if (newUser) {
+      await newUser.save();
+      generateToken(res, newUser._id, newUser.role);
 
-    await customer.save();
-    generateToken(res, customer._id, customer.role);
+      const customer = {
+        id: newUser._id,
+        fullName: newUser.fullName,
+        email: newUser.email,
+        phone: newUser.phone,
+        role: newUser.role,
+        avatar: newUser.avatar,
+        isActive: newUser.isActive,
+        emailVerified: newUser.emailVerified,
+        lastLogin: newUser.lastLogin,
+        addresses: newUser.addresses,
+        wishlist: newUser.wishlist,
+        cart: newUser.cart,
+        orderHistory: newUser.orderHistory,
+        lastAccess: newUser.lastAccess,
+      };
+
+      res.status(201).json({
+        success: true,
+        message: "Customer registered successfully",
+        customer,
+      });
+    } else {
+      res.status(400).json({ success: false, message: "Invalid User Data" });
+    }
+  } catch (error) {
+    console.log("Error in signup controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const customerLogin = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    if (!email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const user = await User.find({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      { $set: { lastAccess: new Date() } },
+      { new: true }
+    ).select("-password");
+
+    generateToken(res, updatedUser._id, updatedUser.role);
+
+    const customer = {
+      id: updatedUser._id,
+      fullName: updatedUser.fullName,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      role: updatedUser.role,
+      avatar: updatedUser.avatar,
+      isActive: updatedUser.isActive,
+      emailVerified: updatedUser.emailVerified,
+      lastLogin: updatedUser.lastLogin,
+      addresses: updatedUser.addresses,
+      wishlist: updatedUser.wishlist,
+      cart: updatedUser.cart,
+      orderHistory: updatedUser.orderHistory,
+      lastAccess: updatedUser.lastAccess,
+    };
+
     res.status(201).json({
-      message: "Customer registered successfully",
-      customer: {
-        id: customer._id,
-        fullName: customer.fullName,
-        email: customer.email,
-        phone: customer.phone,
-        role: customer.role,
-        isActive: customer.isActive,
-        emailVerified: customer.emailVerified,
-        avatar: customer.avatar,
-        createdAt: customer.createdAt,
-        updatedAt: customer.updatedAt,
-        lastLogin: customer.lastLogin,
-        addresses: customer.addresses,
-        wishlist: customer.wishlist,
-        cart: customer.cart,
-        orderHistory: customer.orderHistory,
-      },
+      success: true,
+      message: "Customer loggedIn successfully",
+      customer,
     });
-  } catch (error) {}
+  } catch (error) {
+    console.log("Error in login controller", error.message);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const customerLogout = async (req, res) => {
+  try {
+    clearTokenCookie(res);
+    res.status(200).json({ success: true, message: "Logged out successfully" });
+  } catch (error) {
+    console.log("Error in logout controller", error.message);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
 };
 
 //vendor auth
