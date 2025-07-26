@@ -1,11 +1,12 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
-import Customer from "../models/newUser.model.js";
 import { generateToken } from "../lib/utils.js";
 
 //customer auth
 export const customerSignup = async (req, res) => {
   const { email, password, firstName, lastName, phone } = req.body;
+
+  console.log("Signup request received:", req.body);
 
   try {
     if (!email || !password || !firstName || !lastName || !phone) {
@@ -54,7 +55,9 @@ export const customerSignup = async (req, res) => {
 
     if (newUser) {
       await newUser.save();
-      generateToken(res, newUser._id, newUser.role);
+
+      //this was showing error because generateToken expects a user object but i am only giving individual fields
+      generateToken(newUser, res); //now it is fixed
 
       const customer = {
         id: newUser._id,
@@ -95,6 +98,8 @@ export const customerLogin = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    console.log("Login request received:", req.body);
+
     const user = await User.find({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -111,7 +116,7 @@ export const customerLogin = async (req, res) => {
       { new: true }
     ).select("-password");
 
-    generateToken(res, updatedUser._id, updatedUser.role);
+    generateToken(updatedUser, res);
 
     const customer = {
       id: updatedUser._id,
