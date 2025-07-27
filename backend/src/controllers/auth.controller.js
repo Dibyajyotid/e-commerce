@@ -1,6 +1,11 @@
 import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
-import { generateToken } from "../lib/utils.js";
+import Vendor from "../models/vendor.model.js";
+import {
+  clearTokenCookie,
+  generateUserToken,
+  generateVendorToken,
+} from "../lib/utils.js";
 
 //customer auth
 export const customerSignup = async (req, res) => {
@@ -57,7 +62,7 @@ export const customerSignup = async (req, res) => {
       await newUser.save();
 
       //this was showing error because generateToken expects a user object but i am only giving individual fields
-      generateToken(newUser, res); //now it is fixed
+      generateUserToken(newUser, res); //now it is fixed
 
       const customer = {
         id: newUser._id,
@@ -116,7 +121,7 @@ export const customerLogin = async (req, res) => {
       { new: true }
     ).select("-password");
 
-    generateToken(updatedUser, res);
+    generateUserToken(updatedUser, res);
 
     const customer = {
       id: updatedUser._id,
@@ -156,24 +161,7 @@ export const customerLogout = async (req, res) => {
   }
 };
 
-//vendor auth
-export const vendorSignup = async (req, res) => {
-  const {
-    email,
-    password,
-    firstName,
-    lastName,
-    businessName,
-    businessAddress,
-    businessType,
-    businessLicenseNumber,
-    businessPhone,
-    businessEmail,
-    bankDetails,
-  } = req.body;
-};
-
-export const checkAuth = (req, res) => {
+export const checkUserAuth = (req, res) => {
   try {
     if (!req.user) {
       return res
@@ -204,3 +192,135 @@ export const checkAuth = (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+//vendor auth
+export const vendorSignup = async (req, res) => {
+  const { email, password, businessName } = req.body;
+
+  try {
+    if (!email || !password || !businessName) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters long" });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    const existingVendor = await Vendor.findOne({ email });
+    if (existingVendor) {
+      return res.status(400).json({
+        success: false,
+        message: "vendor already exists please Login",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newVendor = new Vendor({
+      email,
+      password: hashedPassword,
+      businessName,
+    });
+
+    if (newVendor) {
+      await newVendor.save();
+
+      generateVendorToken(newVendor, res);
+
+      const vendor = {
+        id: newVendor._id,
+        email: newVendor.email,
+        businessName: newVendor.businessName,
+        businessLogo: newVendor.businessLogo,
+        businessRegistrationNumber: newVendor.businessRegistrationNumber,
+        taxID: newVendor.taxID,
+        businessAddress: newVendor.businessAddress,
+        businessPhone: newVendor.businessPhone,
+        businessEmail: newVendor.businessEmail,
+        bankingDetails: newVendor.bankingDetails,
+        approved: newVendor.approved,
+        approvalDate: newVendor.approvalDate,
+        products: newVendor.products,
+        lastAccess: newVendor.lastAccess,
+      };
+
+      res.status(201).json({
+        success: true,
+        message: "Vendor registered successfully",
+        vendor,
+      });
+    } else {
+      res.status(400).json({ success: false, message: "Invalid Vendor Data" });
+    }
+  } catch (error) {
+    console.log("Error in signup controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const vendorLogin = async (req, res) => {
+  const { email, password, businessName } = req.body;
+
+  try {
+    if (!email || !password || !businessName) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const vendor = await Vendor.findOne({ email });
+    if (!vendor) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(password, Vendor.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      vendor._id,
+      { $set: { lastAccess: new Date() } },
+      { new: true }
+    ).select("-password");
+
+    generateVendorToken(updatedVendor, res);
+
+    const vendorData = {
+      id: updatedVendor._id,
+      email: updatedVendor.email,
+      businessName: updatedVendor.businessName,
+      businessLogo: updatedVendor.businessLogo,
+      businessRegistrationNumber: updatedVendor.businessRegistrationNumber,
+      businessAddress: updatedVendor.businessAddress,
+    };
+
+    res.status(201).json({
+      success: true,
+      message: "Vendor loggedIn successfully",
+      vendorData,
+    });
+  } catch (error) {
+    console.log("Error in checkAuth controller", error.message);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const vendorLogout = async (req, res) => {
+  try {
+    clearTokenCookie(res);
+    res.status(200).json({ success: true, message: "Logged out successfully" });
+  } catch (error) {
+    console.log("Error in logout controller", error.message);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+
+//delivery auth

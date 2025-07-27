@@ -2,10 +2,27 @@ import mongoose from "mongoose";
 
 const vendorSchema = new mongoose.Schema(
   {
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    password: {
+      type: String,
+      required: true,
+    },
+
     businessName: {
       type: String,
       required: true,
     },
+
+    businessLogo: {
+      type: String,
+      default: "",
+    },
+
     businessRegistrationNumber: {
       type: String,
       required: true,
@@ -64,6 +81,7 @@ const vendorSchema = new mongoose.Schema(
     },
     approved: {
       type: Boolean,
+      default: false,
     },
     approvalDate: {
       type: Date,
@@ -74,6 +92,11 @@ const vendorSchema = new mongoose.Schema(
         ref: "Product",
       },
     ],
+
+    lastAccess: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );
