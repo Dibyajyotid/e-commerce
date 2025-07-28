@@ -16,7 +16,7 @@ export const generateUserToken = (user, res) => {
     role: user.role,
   };
 
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {
+  const token = jwt.sign(payload, process.env.JWT_USER_SECRET, {
     expiresIn: "7d", // Token valid for 7 days
   });
 
@@ -42,7 +42,7 @@ export const verifyUserToken = (token) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_USER_SECRET);
 
     // Validate required fields in payload
     if (!decoded.userId || !decoded.role) {
@@ -74,7 +74,7 @@ export const clearTokenCookie = (res) => {
 //generates a token for vendor
 export const generateVendorToken = (vendor, res) => {
   config();
-  if (!user?._id || !user?.role || !user) {
+  if (!vendor?._id || !vendor?.email || !vendor?.businessName || !vendor) {
     throw new Error("Invalid user data for token generation");
   }
 
@@ -84,7 +84,7 @@ export const generateVendorToken = (vendor, res) => {
     BusinessName: vendor.businessName,
   };
 
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {
+  const token = jwt.sign(payload, process.env.JWT_VENDOR_SECRET, {
     expiresIn: "7d", // Token valid for 7 days
   });
 
@@ -109,10 +109,71 @@ export const verifyVendorToken = (token) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_VENDOR_SECRET);
 
     // Validate required fields in payload
     if (!decoded.vendorId || !decoded.BusinessName) {
+      throw new Error("Invalid token payload");
+    }
+
+    return decoded;
+  } catch (error) {
+    throw new Error(
+      error.name === "TokenExpiredError" ? "Token expired" : "Invalid token"
+    );
+  }
+};
+
+//delivery token generation
+// This function generates a JWT token for the delivery and sets it as a cookie in the response
+//generates a token for delivery
+export const generateDeliveryToken = (delivery, res) => {
+  config();
+  if (
+    !delivery ||
+    !delivery?._id ||
+    !delivery?.drivingLicenseNumber ||
+    !delivery.fullName
+  ) {
+    throw new Error("Invalid delivery data for token generation");
+  }
+
+  const payload = {
+    deliveryId: delivery._id,
+    drivingLicenseNumber: delivery.drivingLicenseNumber,
+    fullName: delivery.fullName,
+  };
+
+  const token = jwt.sign(payload, process.env.JWT_DELIVERY_SECRET, {
+    expiresIn: "7d", // Token valid for 7 days
+  });
+
+  // Set cookie options
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in millisecond
+    secure: process.env.NODE_ENV === "production",
+    domain: process.env.COOKIE_DOMAIN || "localhost",
+  };
+  res.cookie("token", token, cookieOptions);
+  return token;
+};
+
+export const verifyDeliveryToken = (token) => {
+  if (!token) {
+    throw new Error("No token provided");
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_DELIVERY_SECRET);
+
+    // Validate required fields in payload
+    if (
+      !decoded.deliveryId ||
+      !decoded.drivingLicenseNumber ||
+      !decoded.fullName
+    ) {
       throw new Error("Invalid token payload");
     }
 

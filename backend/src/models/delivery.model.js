@@ -9,19 +9,12 @@ const deliverySchema = new mongoose.Schema(
 
     email: {
       type: String,
-      required: true,
       unique: true,
     },
 
     password: {
       type: String,
       required: true,
-    },
-
-    role: {
-      type: String,
-      enum: ["customer", "admin"],
-      default: "customer",
     },
 
     avatar: {
@@ -35,6 +28,11 @@ const deliverySchema = new mongoose.Schema(
 
     vehicleType: {
       type: String,
+      enum: [
+        "twp-wheeler with gear",
+        "twp-wheeler without gear",
+        "four-wheeler",
+      ],
       required: true,
     },
 
@@ -43,8 +41,15 @@ const deliverySchema = new mongoose.Schema(
       required: true,
     },
 
-    licenseNumber: {
+    drivingLicenseNumber: {
       type: String,
+      required: true,
+    },
+
+    drivingLicenseType: {
+      type: String,
+      enum: ["MCWOG", "MCWG", "LMV"],
+      default: "LMV",
       required: true,
     },
 
@@ -88,6 +93,10 @@ const deliverySchema = new mongoose.Schema(
         },
       },
     ],
+
+    lastActive: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

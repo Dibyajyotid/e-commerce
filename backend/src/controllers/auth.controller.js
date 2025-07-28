@@ -3,9 +3,11 @@ import User from "../models/user.model.js";
 import Vendor from "../models/vendor.model.js";
 import {
   clearTokenCookie,
+  generateDeliveryToken,
   generateUserToken,
   generateVendorToken,
 } from "../lib/utils.js";
+import Delivery from "../models/delivery.model.js";
 
 //customer auth
 export const customerSignup = async (req, res) => {
@@ -322,5 +324,150 @@ export const vendorLogout = async (req, res) => {
   }
 };
 
-
 //delivery auth
+export const deliverySignup = async (req, res) => {
+  const {
+    firstName,
+    lastName,
+    password,
+    vehicleType,
+    licensePlate,
+    drivingLicenseNumber,
+    drivingLicenseType,
+  } = req.body;
+
+  try {
+    if (
+      !firstName ||
+      !lastName ||
+      !password ||
+      !vehicleType ||
+      !licensePlate ||
+      !drivingLicenseNumber ||
+      !drivingLicenseType
+    ) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (!/^[a-zA-Z]+$/.test(firstName) || !/^[a-zA-Z]+$/.test(lastName)) {
+      return res.status(400).json({ message: "Invalid name format" });
+    }
+
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters long" });
+    }
+
+    const existingdelivery = await Delivery.findOne({ drivingLicenseNumber });
+    if (existingdelivery) {
+      return res.status(400).json({
+        success: false,
+        message: "delivery already exists please Login",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newdelivery = new Delivery({
+      fullName: `${firstName} ${lastName}`,
+      password: hashedPassword,
+      vehicleType,
+      licensePlate,
+      drivingLicenseNumber,
+      drivingLicenseType,
+    });
+
+    if (newdelivery) {
+      await newdelivery.save();
+
+      generateDeliveryToken(newdelivery, res);
+
+      const vendor = {
+        id: newdelivery._id,
+        email: newdelivery.email,
+        fullName: newdelivery.fullName,
+        vehicleType: newdelivery.vehicleType,
+        licensePlate: newdelivery.licensePlate,
+        drivingLicenseNumber: newdelivery.drivingLicenseNumber,
+        drivingLicenseType: newdelivery.drivingLicenseType,
+        avatar: newdelivery.avatar,
+        phone: newdelivery.phone,
+        currentLocation: newdelivery.currentLocation, 
+        availability: newdelivery.availability,
+        lastActive: newdelivery.lastActive,
+        assignedOrders: newdelivery.assignedOrders,
+        completedOrders: newdelivery.completedOrders,
+        ratings: newdelivery.ratings,
+      };
+
+      res.status(201).json({
+        success: true,
+        message: "delivery registered successfully",
+        vendor,
+      });
+    } else {
+      res.status(400).json({ success: false, message: "Invalid delivery Data" });
+    }
+  } catch (error) {
+    console.log("Error in signup controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const deliveryLogin = async (req, res) => {
+  const { email, password, businessName } = req.body;
+
+  try {
+    if (!email || !password || !businessName) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const vendor = await Vendor.findOne({ email });
+    if (!vendor) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(password, Vendor.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      vendor._id,
+      { $set: { lastAccess: new Date() } },
+      { new: true }
+    ).select("-password");
+
+    generateDeliveryToken(updatedVendor, res);
+
+    const vendorData = {
+      id: updatedVendor._id,
+      email: updatedVendor.email,
+      businessName: updatedVendor.businessName,
+      businessLogo: updatedVendor.businessLogo,
+      businessRegistrationNumber: updatedVendor.businessRegistrationNumber,
+      businessAddress: updatedVendor.businessAddress,
+    };
+
+    res.status(201).json({
+      success: true,
+      message: "Vendor loggedIn successfully",
+      vendorData,
+    });
+  } catch (error) {
+    console.log("Error in checkAuth controller", error.message);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const deliveryLogout = async (req, res) => {
+  try {
+    clearTokenCookie(res);
+    res.status(200).json({ success: true, message: "Logged out successfully" });
+  } catch (error) {
+    console.log("Error in logout controller", error.message);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
