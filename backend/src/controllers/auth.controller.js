@@ -324,6 +324,38 @@ export const vendorLogout = async (req, res) => {
   }
 };
 
+export const checkVendorAuth = (req, res) => {
+  try {
+    if (!req.vendor) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authorized" });
+    }
+
+    const vendor = {
+      id: req.vendor._id,
+      email: req.vendor.email,
+      businessName: req.vendor.businessName,
+      businessLogo: req.vendor.businessLogo,
+      businessRegistrationNumber: req.vendor.businessRegistrationNumber,
+      taxID: req.vendor.taxID,
+      businessAddress: req.vendor.businessAddress,
+      businessPhone: req.vendor.businessPhone,
+      businessEmail: req.vendor.businessEmail,
+      bankingDetails: req.vendor.bankingDetails,
+      approved: req.vendor.approved,
+      approvalDate: req.vendor.approvalDate,
+      products: req.vendor.products,
+      lastAccess: req.vendor.lastAccess,
+    };
+
+    res.status(200).json({ success: true, vendor });
+  } catch (error) {
+    console.log("Error in checkAuth controller", error.message);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 //delivery auth
 export const deliverySignup = async (req, res) => {
   const {
@@ -479,6 +511,39 @@ export const deliveryLogout = async (req, res) => {
     res.status(200).json({ success: true, message: "Logged out successfully" });
   } catch (error) {
     console.log("Error in logout controller", error.message);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const checkDeliveryAuth = (req, res) => {
+  try {
+    if (!req.delivery) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authorized" });
+    }
+
+    const delivery = {
+      id: req.delivery._id,
+      email: req.delivery.email,
+      fullName: req.delivery.fullName,
+      vehicleType: req.delivery.vehicleType,
+      licensePlate: req.delivery.licensePlate,
+      drivingLicenseNumber: req.delivery.drivingLicenseNumber,
+      drivingLicenseType: req.delivery.drivingLicenseType,
+      avatar: req.delivery.avatar,
+      phone: req.delivery.phone,
+      currentLocation: req.delivery.currentLocation,
+      availability: req.delivery.availability,
+      lastActive: req.delivery.lastActive,
+      assignedOrders: req.delivery.assignedOrders,
+      completedOrders: req.delivery.completedOrders,
+      ratings: req.delivery.ratings,
+    };
+
+    res.status(200).json({ success: true, delivery });
+  } catch (error) {
+    console.log("Error in checkAuth controller", error.message);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
