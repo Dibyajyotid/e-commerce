@@ -384,7 +384,7 @@ export const deliverySignup = async (req, res) => {
 
       generateDeliveryToken(newdelivery, res);
 
-      const vendor = {
+      const delivery = {
         id: newdelivery._id,
         email: newdelivery.email,
         fullName: newdelivery.fullName,
@@ -394,7 +394,7 @@ export const deliverySignup = async (req, res) => {
         drivingLicenseType: newdelivery.drivingLicenseType,
         avatar: newdelivery.avatar,
         phone: newdelivery.phone,
-        currentLocation: newdelivery.currentLocation, 
+        currentLocation: newdelivery.currentLocation,
         availability: newdelivery.availability,
         lastActive: newdelivery.lastActive,
         assignedOrders: newdelivery.assignedOrders,
@@ -405,10 +405,12 @@ export const deliverySignup = async (req, res) => {
       res.status(201).json({
         success: true,
         message: "delivery registered successfully",
-        vendor,
+        delivery,
       });
     } else {
-      res.status(400).json({ success: false, message: "Invalid delivery Data" });
+      res
+        .status(400)
+        .json({ success: false, message: "Invalid delivery Data" });
     }
   } catch (error) {
     console.log("Error in signup controller", error.message);
@@ -417,47 +419,56 @@ export const deliverySignup = async (req, res) => {
 };
 
 export const deliveryLogin = async (req, res) => {
-  const { email, password, businessName } = req.body;
+  const { drivingLicenseNumber, password } = req.body;
 
   try {
-    if (!email || !password || !businessName) {
+    if (!drivingLicenseNumber || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const vendor = await Vendor.findOne({ email });
-    if (!vendor) {
+    const delivery = await Delivery.findOne({ drivingLicenseNumber });
+    if (!delivery) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, Vendor.password);
+    const isPasswordCorrect = await bcrypt.compare(password, Delivery.password);
     if (!isPasswordCorrect) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const updatedVendor = await Vendor.findByIdAndUpdate(
-      vendor._id,
-      { $set: { lastAccess: new Date() } },
+    const updatedDelivery = await Delivery.findByIdAndUpdate(
+      updatedDelivery._id,
+      { $set: { lastActive: new Date() } },
       { new: true }
     ).select("-password");
 
-    generateDeliveryToken(updatedVendor, res);
+    generateDeliveryToken(updatedDelivery, res);
 
-    const vendorData = {
-      id: updatedVendor._id,
-      email: updatedVendor.email,
-      businessName: updatedVendor.businessName,
-      businessLogo: updatedVendor.businessLogo,
-      businessRegistrationNumber: updatedVendor.businessRegistrationNumber,
-      businessAddress: updatedVendor.businessAddress,
+    const deliveryData = {
+      id: updatedDelivery._id,
+      email: updatedDelivery.email,
+      fullName: updatedDelivery.fullName,
+      vehicleType: updatedDelivery.vehicleType,
+      licensePlate: updatedDelivery.licensePlate,
+      drivingLicenseNumber: updatedDelivery.drivingLicenseNumber,
+      drivingLicenseType: updatedDelivery.drivingLicenseType,
+      avatar: updatedDelivery.avatar,
+      phone: updatedDelivery.phone,
+      currentLocation: updatedDelivery.currentLocation,
+      availability: updatedDelivery.availability,
+      lastActive: updatedDelivery.lastActive,
+      assignedOrders: updatedDelivery.assignedOrders,
+      completedOrders: updatedDelivery.completedOrders,
+      ratings: updatedDelivery.ratings,
     };
 
     res.status(201).json({
       success: true,
-      message: "Vendor loggedIn successfully",
-      vendorData,
+      message: "Delivery loggedIn successfully",
+      deliveryData,
     });
   } catch (error) {
-    console.log("Error in checkAuth controller", error.message);
+    console.log("Error in login controller", error.message);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
