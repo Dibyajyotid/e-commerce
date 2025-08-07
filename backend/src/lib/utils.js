@@ -57,18 +57,6 @@ export const verifyUserToken = (token) => {
   }
 };
 
-//clears the JWT token by setting an expired cookie
-export const clearTokenCookie = (res) => {
-  res.clearCookie("token", {
-    domain: process.env.COOKIE_DOMAIN || "localhost",
-    path: "/",
-    httpOnly: true,
-    sameSite: "None",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 0, // Set maxAge to 0 to expire the cookie immediately
-  });
-};
-
 //vendor token generation
 // This function generates a JWT token for the vendor and sets it as a cookie in the response
 //generates a token for vendor
@@ -183,4 +171,16 @@ export const verifyDeliveryToken = (token) => {
       error.name === "TokenExpiredError" ? "Token expired" : "Invalid token"
     );
   }
+};
+
+//clears the JWT token by setting an expired cookie
+export const clearTokenCookie = (res) => {
+  res.clearCookie("token", {
+    domain: process.env.COOKIE_DOMAIN || "localhost",
+    path: "/",
+    httpOnly: true,
+    sameSite: "None",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 0, // Set maxAge to 0 to expire the cookie immediately
+  });
 };
