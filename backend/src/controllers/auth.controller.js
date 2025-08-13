@@ -198,6 +198,7 @@ export const checkUserAuth = (req, res) => {
 //vendor auth
 export const vendorSignup = async (req, res) => {
   const { email, password, businessName } = req.body;
+  console.log(req.body);
 
   try {
     if (!email || !password || !businessName) {
